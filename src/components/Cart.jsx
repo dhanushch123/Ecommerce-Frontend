@@ -206,7 +206,7 @@ const Cart = () => {
             <div className="total">Total: ${totalPrice}</div>
             <Button
               className="btn btn-primary"
-              style={{ width: "100%" }}
+              style={{ width: "100%",marginTop:"15px"}}
               onClick={() => setShowModal(true)}
             >
               Checkout
