@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Home from "./Home"
-import axios from "axios";
+import API from "../axios";
 // import { json } from "react-router-dom";
 // import { BiSunFill, BiMoon } from "react-icons/bi";
 
@@ -22,7 +22,7 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
 
   const fetchData = async (value) => {
     try {
-      const response = await axios.get("http://localhost:8080/api/products");
+      const response = await API.get("api/products");
       setSearchResults(response.data);
       console.log(response.data);
     } catch (error) {
@@ -35,8 +35,8 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
     if (value.length >= 1) {
       setShowSearchResults(true)
     try {
-      const response = await axios.get(
-        `http://localhost:8080/api/products/search?keyword=${value}`
+      const response = await API.get(
+        `api/products/search?keyword=${value}`
       );
       setSearchResults(response.data);
       setNoResults(response.data.length === 0);
@@ -97,6 +97,7 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
   const categories = [
     "Laptop",
     "Headphone",
+    "Groceries",
     "Mobile",
     "Electronics",
     "Toys",
@@ -107,8 +108,8 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
       <header>
         <nav className="navbar navbar-expand-lg fixed-top">
           <div className="container-fluid">
-            <a className="navbar-brand" href="https://telusko.com/">
-              Telusko
+            <a className="navbar-brand">
+              Ecom
             </a>
             <button
               className="navbar-toggler"
@@ -127,6 +128,16 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
             >
               <ul className="navbar-nav me-auto mb-2 mb-lg-0">
                 <li className="nav-item">
+                  <a className="nav-link active" aria-current="page" href="/login">
+                    Login
+                  </a>
+                </li>
+                <li className="nav-item">
+                  <a className="nav-link active" aria-current="page" href="/register">
+                    Register
+                  </a>
+                </li>
+                <li className="nav-item">
                   <a className="nav-link active" aria-current="page" href="/">
                     Home
                   </a>
@@ -136,6 +147,7 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
                     Add Product
                   </a>
                 </li>
+                
 
                 <li className="nav-item dropdown">
                   <a
@@ -162,13 +174,22 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
                   </ul>
                 </li>
 
+                <li className="nav-item">
+                  <a onClick={()=>{
+                    localStorage.removeItem("token")
+                    localStorage.removeItem("role")
+                  }} className="nav-link" href="/login">
+                    Logout
+                  </a>
+                </li>
+
                 <li className="nav-item"></li>
               </ul>
               <button className="theme-btn" onClick={() => toggleTheme()}>
                 {theme === "dark-theme" ? (
-                  <i className="bi bi-moon-fill"></i>
-                ) : (
                   <i className="bi bi-sun-fill"></i>
+                ) : (
+                  <i className="bi bi-moon-fill"></i>
                 )}
               </button>
               <div className="d-flex align-items-center cart">

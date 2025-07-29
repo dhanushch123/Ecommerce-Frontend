@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import axios from "axios";
+import API from "../axios";
+import { useNavigate } from "react-router-dom";
 
 const AddProduct = () => {
   const [product, setProduct] = useState({
@@ -13,6 +14,7 @@ const AddProduct = () => {
     productAvailable: false,
   });
   const [image, setImage] = useState(null);
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -24,30 +26,32 @@ const AddProduct = () => {
     // setProduct({...product, image: e.target.files[0]})
   };
 
-  const submitHandler = (event) => {
-    event.preventDefault();
-    const formData = new FormData();
-    formData.append("imageFile", image);
-    formData.append(
-      "product",
-      new Blob([JSON.stringify(product)], { type: "application/json" })
-    );
+  const submitHandler = async (event) => {
+  event.preventDefault();
 
-    axios
-      .post("http://localhost:8080/api/product", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
-      .then((response) => {
-        console.log("Product added successfully:", response.data);
-        alert("Product added successfully");
-      })
-      .catch((error) => {
-        console.error("Error adding product:", error);
-        alert("Error adding product");
-      });
-  };
+  const formData = new FormData();
+  formData.append("image", image); // use same key as backend @RequestPart
+  formData.append(
+    "product",
+    new Blob([JSON.stringify(product)], { type: "application/json" })
+  );
+
+  try {
+    const response = await API.post("api/product", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+
+      }
+    });
+
+    console.log("Product added successfully:", response.data);
+    alert("Product added successfully");
+    navigate('/')
+  } catch (error) {
+    console.error("Error adding product:", error.response?.data || error.message);
+    alert("Error adding product");
+  }
+};
 
   return (
     <div className="container">

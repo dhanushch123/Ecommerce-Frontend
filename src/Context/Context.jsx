@@ -16,6 +16,7 @@ export const AppProvider = ({ children }) => {
   const [data, setData] = useState([]);
   const [isError, setIsError] = useState("");
   const [cart, setCart] = useState(JSON.parse(localStorage.getItem('cart')) || []);
+  const [role,setRole] = useState("USER")
 
 
   const addToCart = (product) => {
@@ -45,7 +46,7 @@ export const AppProvider = ({ children }) => {
 
   const refreshData = async () => {
     try {
-      const response = await axios.get("/products");
+      const response = await axios.get("api/products");
       setData(response.data);
     } catch (error) {
       setIsError(error.message);
@@ -65,7 +66,7 @@ export const AppProvider = ({ children }) => {
   }, [cart]);
   
   return (
-    <AppContext.Provider value={{ data, isError, cart, addToCart, removeFromCart,refreshData, clearCart  }}>
+    <AppContext.Provider value={{ data, isError, cart, addToCart, removeFromCart,refreshData, clearCart,role,setRole}}>
       {children}
     </AppContext.Provider>
   );

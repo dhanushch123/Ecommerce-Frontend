@@ -1,18 +1,41 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import API from "../axios";
 import AppContext from "../Context/Context";
 import unplugged from "../assets/unplugged.png"
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Home = ({ selectedCategory }) => {
   const { data, isError, addToCart, refreshData } = useContext(AppContext);
   const [products, setProducts] = useState([]);
   const [isDataFetched, setIsDataFetched] = useState(false);
+   const location = useLocation();
+   const navigate = useNavigate();
+
 
   useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const token = queryParams.get("token");
+    const role = queryParams.get("role");
+
+    if (token && role) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+
+      navigate('/')
+      
+    }
+  }, [location.search, navigate]);
+
+
+  useEffect(() => {
+    
+     
+
     if (!isDataFetched) {
       refreshData();
       setIsDataFetched(true);
+      // desc
     }
   }, [refreshData, isDataFetched]);
 
@@ -22,8 +45,8 @@ const Home = ({ selectedCategory }) => {
         const updatedProducts = await Promise.all(
           data.map(async (product) => {
             try {
-              const response = await axios.get(
-                `http://localhost:8080/api/product/${product.id}/image`,
+              const response = await API.get(
+                `api/product/${product.id}/image`,
                 { responseType: "blob" }
               );
               const imageUrl = URL.createObjectURL(response.data);
@@ -81,24 +104,26 @@ const Home = ({ selectedCategory }) => {
           </h2>
         ) : (
           filteredProducts.map((product) => {
-            const { id, brand, name, price, productAvailable, imageUrl } =
+            console.log(product)
+            const { id, brand, name, price, availability, imageUrl } =
               product;
             const cardStyle = {
               width: "18rem",
               height: "12rem",
               boxShadow: "rgba(0, 0, 0, 0.24) 0px 2px 3px",
-              backgroundColor: productAvailable ? "#fff" : "#ccc",
+              backgroundColor: availability ? "#fff" : "#ccc",
             };
             return (
               <div
                 className="card mb-3"
                 style={{
                   width: "250px",
-                  height: "360px",
+                  height: "400px",
                   boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
                   borderRadius: "10px",
                   overflow: "hidden", 
-                  backgroundColor: productAvailable ? "#fff" : "#ccc",
+                  
+                  backgroundColor: availability ? "#fff" : "#ccc",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent:'flex-start',
@@ -135,7 +160,7 @@ const Home = ({ selectedCategory }) => {
                     <div>
                       <h5
                         className="card-title"
-                        style={{ margin: "0 0 10px 0", fontSize: "1.2rem" }}
+                        style={{ margin: "0 0 10px 0", fontSize: "1.2rem",height : "50px",overflow : "clip" }}
                       >
                         {name.toUpperCase()}
                       </h5>
@@ -158,14 +183,15 @@ const Home = ({ selectedCategory }) => {
                     </div>
                     <button
                       className="btn-hover color-9"
-                      style={{margin:'10px 25px 0px '  }}
+                      style={{margin:'15px 25px 0px '}}
                       onClick={(e) => {
                         e.preventDefault();
                         addToCart(product);
+                        alert("Added to cart successfully!!")
                       }}
-                      disabled={!productAvailable}
+                      disabled={!availability}
                     >
-                      {productAvailable ? "Add to Cart" : "Out of Stock"}
+                      {availability ? "Add to Cart" : "Out of Stock"}
                     </button> 
                   </div>
                 </Link>

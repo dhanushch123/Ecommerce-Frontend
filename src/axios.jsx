@@ -1,7 +1,8 @@
 import axios from "axios";
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const API = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: `${backendUrl}/`,
 });
 delete API.defaults.headers.common["Authorization"];
 export default API;
