@@ -1,30 +1,31 @@
 import React, { useEffect, useState } from "react";
-import Home from "./Home"
+import { useNavigate } from "react-router-dom";
 import API from "../axios";
-// import { json } from "react-router-dom";
-// import { BiSunFill, BiMoon } from "react-icons/bi";
 
 const Navbar = ({ onSelectCategory, onSearch }) => {
+  const navigate = useNavigate();
+
   const getInitialTheme = () => {
     const storedTheme = localStorage.getItem("theme");
     return storedTheme ? storedTheme : "light-theme";
   };
+
   const [selectedCategory, setSelectedCategory] = useState("");
   const [theme, setTheme] = useState(getInitialTheme());
   const [input, setInput] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [noResults, setNoResults] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [showSearchResults,setShowSearchResults] = useState(false)
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, []);
 
-  const fetchData = async (value) => {
+  const fetchData = async () => {
     try {
       const response = await API.get("api/products");
       setSearchResults(response.data);
-      console.log(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -33,17 +34,14 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
   const handleChange = async (value) => {
     setInput(value);
     if (value.length >= 1) {
-      setShowSearchResults(true)
-    try {
-      const response = await API.get(
-        `api/products/search?keyword=${value}`
-      );
-      setSearchResults(response.data);
-      setNoResults(response.data.length === 0);
-      console.log(response.data);
-    } catch (error) {
-      console.error("Error searching:", error);
-    }
+      setShowSearchResults(true);
+      try {
+        const response = await API.get(`api/products/search?keyword=${value}`);
+        setSearchResults(response.data);
+        setNoResults(response.data.length === 0);
+      } catch (error) {
+        console.error("Error searching:", error);
+      }
     } else {
       setShowSearchResults(false);
       setSearchResults([]);
@@ -51,39 +49,11 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
     }
   };
 
-  
-  // const handleChange = async (value) => {
-  //   setInput(value);
-  //   if (value.length >= 1) {
-  //     setShowSearchResults(true);
-  //     try {
-  //       let response;
-  //       if (!isNaN(value)) {
-  //         // Input is a number, search by ID
-  //         response = await axios.get(`http://localhost:8080/api/products/search?id=${value}`);
-  //       } else {
-  //         // Input is not a number, search by keyword
-  //         response = await axios.get(`http://localhost:8080/api/products/search?keyword=${value}`);
-  //       }
-
-  //       const results = response.data;
-  //       setSearchResults(results);
-  //       setNoResults(results.length === 0);
-  //       console.log(results);
-  //     } catch (error) {
-  //       console.error("Error searching:", error.response ? error.response.data : error.message);
-  //     }
-  //   } else {
-  //     setShowSearchResults(false);
-  //     setSearchResults([]);
-  //     setNoResults(false);
-  //   }
-  // };
-
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
     onSelectCategory(category);
   };
+
   const toggleTheme = () => {
     const newTheme = theme === "dark-theme" ? "light-theme" : "dark-theme";
     setTheme(newTheme);
@@ -103,14 +73,15 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
     "Toys",
     "Fashion",
   ];
+
   return (
     <>
       <header>
         <nav className="navbar navbar-expand-lg fixed-top">
           <div className="container-fluid">
-            <a className="navbar-brand">
+            <p className="navbar-brand" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
               Ecom
-            </a>
+            </p>
             <button
               className="navbar-toggler"
               type="button"
@@ -122,44 +93,38 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
             >
               <span className="navbar-toggler-icon"></span>
             </button>
-            <div
-              className="collapse navbar-collapse"
-              id="navbarSupportedContent"
-            >
+            <div className="collapse navbar-collapse" id="navbarSupportedContent">
               <ul className="navbar-nav me-auto mb-2 mb-lg-0">
                 <li className="nav-item">
-                  <a className="nav-link active" aria-current="page" href="/login">
+                  <p className="nav-link active" onClick={() => navigate("/login")} style={{ cursor: "pointer" }}>
                     Login
-                  </a>
+                  </p>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link active" aria-current="page" href="/register">
+                  <p className="nav-link active" onClick={() => navigate("/register")} style={{ cursor: "pointer" }}>
                     Register
-                  </a>
+                  </p>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link active" aria-current="page" href="/">
+                  <p className="nav-link active" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
                     Home
-                  </a>
+                  </p>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link" href="/add_product">
+                  <p className="nav-link" onClick={() => navigate("/add_product")} style={{ cursor: "pointer" }}>
                     Add Product
-                  </a>
+                  </p>
                 </li>
-                
-
                 <li className="nav-item dropdown">
-                  <a
+                  <p
                     className="nav-link dropdown-toggle"
-                    href="/"
                     role="button"
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
+                    style={{ cursor: "pointer" }}
                   >
                     Categories
-                  </a>
-
+                  </p>
                   <ul className="dropdown-menu">
                     {categories.map((category) => (
                       <li key={category}>
@@ -173,35 +138,38 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
                     ))}
                   </ul>
                 </li>
-
                 <li className="nav-item">
-                  <a onClick={()=>{
-                    localStorage.removeItem("token")
-                    localStorage.removeItem("role")
-                  }} className="nav-link" href="/login">
+                  <p
+                    onClick={() => {
+                      localStorage.removeItem("token");
+                      localStorage.removeItem("role");
+                      navigate("/login");
+                    }}
+                    className="nav-link"
+                    style={{ cursor: "pointer" }}
+                  >
                     Logout
-                  </a>
+                  </p>
                 </li>
-
-                <li className="nav-item"></li>
               </ul>
-              <button className="theme-btn" onClick={() => toggleTheme()}>
+
+              <button className="theme-btn" onClick={toggleTheme}>
                 {theme === "dark-theme" ? (
                   <i className="bi bi-sun-fill"></i>
                 ) : (
                   <i className="bi bi-moon-fill"></i>
                 )}
               </button>
+
               <div className="d-flex align-items-center cart">
-                <a href="/cart" className="nav-link text-dark">
-                  <i
-                    className="bi bi-cart me-2"
-                    style={{ display: "flex", alignItems: "center" }}
-                  >
-                    Cart
-                  </i>
-                </a>
-                {/* <form className="d-flex" role="search" onSubmit={handleSearch} id="searchForm"> */}
+                <p
+                  onClick={() => navigate("/cart")}
+                  className="nav-link text-dark"
+                  style={{ cursor: "pointer", marginBottom: 0 }}
+                >
+                  <i className="bi bi-cart me-2">Cart</i>
+                </p>
+
                 <input
                   className="form-control me-2"
                   type="search"
@@ -209,36 +177,30 @@ const Navbar = ({ onSelectCategory, onSearch }) => {
                   aria-label="Search"
                   value={input}
                   onChange={(e) => handleChange(e.target.value)}
-                  onFocus={() => setSearchFocused(true)} // Set searchFocused to true when search bar is focused
-                  onBlur={() => setSearchFocused(false)} // Set searchFocused to false when search bar loses focus
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
                 />
+
                 {showSearchResults && (
-                  <ul className="list-group">
-                    {searchResults.length > 0 ? (  
-                        searchResults.map((result) => (
-                          <li key={result.id} className="list-group-item">
-                            <a href={`/product/${result.id}`} className="search-result-link">
-                            <span>{result.name}</span>
-                            </a>
-                          </li>
-                        ))
+                  <ul className="list-group position-absolute mt-2" style={{ zIndex: 1000, width: '100%' }}>
+                    {searchResults.length > 0 ? (
+                      searchResults.map((result) => (
+                        <li
+                          key={result.id}
+                          className="list-group-item"
+                          style={{ cursor: "pointer" }}
+                          onMouseDown={() => navigate(`/product/${result.id}`)} // use onMouseDown to avoid blur before click
+                        >
+                          {result.name}
+                        </li>
+                      ))
                     ) : (
                       noResults && (
-                        <p className="no-results-message">
-                          No Prouduct with such Name
-                        </p>
+                        <p className="no-results-message p-2">No Product with such Name</p>
                       )
                     )}
                   </ul>
                 )}
-                {/* <button
-                  className="btn btn-outline-success"
-                  onClick={handleSearch}
-                >
-                  Search Products
-                </button> */}
-                {/* </form> */}
-                <div />
               </div>
             </div>
           </div>
