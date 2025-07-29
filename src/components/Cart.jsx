@@ -26,7 +26,7 @@ const Cart = () => {
               const response = API.get(`api/product/${item.id}/image`,
                 { responseType: "blob" }
               );
-              const imageFile = await converUrlToFile(response.data, response.data.imageName);
+              const imageFile = await converUrlToFile(response.data,item.id);
               setCartImage(imageFile)
               const imageUrl = URL.createObjectURL(response.data);
               return { ...item, imageUrl };
