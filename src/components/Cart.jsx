@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from "react";
 import API from "../API";
-import { Button, Card, CardContent, Typography } from "@mui/material";
+import {
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  CircularProgress,
+  Box
+} from "@mui/material";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchCartItems();
@@ -11,74 +19,103 @@ const Cart = () => {
 
   const fetchCartItems = async () => {
     try {
-      const cartResponse = await API.get("api/cart");
+      const { data } = await API.get("api/cart");
+
       const itemsWithImages = await Promise.all(
-        cartResponse.data.map(async (item) => {
-          const imageResponse = await API.get(`api/product/${item.id}/image`, {
-            responseType: "blob"
-          });
-          const imageUrl = URL.createObjectURL(imageResponse.data);
-          return { ...item, imageUrl };
+        data.map(async (item) => {
+          try {
+            const imageRes = await API.get(`api/product/${item.id}/image`, {
+              responseType: "blob",
+            });
+            const imageUrl = URL.createObjectURL(imageRes.data);
+            return { ...item, imageUrl };
+          } catch (err) {
+            console.error(`Error loading image for product ${item.id}`, err);
+            return { ...item, imageUrl: null };
+          }
         })
       );
+
       setCartItems(itemsWithImages);
     } catch (error) {
-      console.error("Failed to fetch cart items:", error);
+      console.error("Failed to load cart items:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCheckout = async (productId) => {
     try {
-      const response = await API.post(`api/product/checkout/${productId}`);
+      await API.post(`api/product/checkout/${productId}`);
       alert("Checkout successful!");
     } catch (error) {
       console.error("Checkout failed:", error);
+      alert("Checkout failed.");
     }
   };
 
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (cartItems.length === 0) {
+    return (
+      <Typography variant="h6" align="center" mt={4}>
+        Your cart is empty.
+      </Typography>
+    );
+  }
+
   return (
-    <div style={{ padding: "2rem" }}>
+    <Box p={3}>
       <Typography variant="h4" gutterBottom>
         Shopping Cart
       </Typography>
 
-      {cartItems.length === 0 ? (
-        <Typography>No items in cart.</Typography>
-      ) : (
-        cartItems.map((item) => (
-          <Card
-            key={item.id}
-            style={{
-              marginBottom: "1rem",
-              display: "flex",
-              alignItems: "center",
-              padding: "1rem"
-            }}
+      {cartItems.map(({ id, name, price, imageUrl }) => (
+        <Card
+          key={id}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            mb: 2,
+            p: 2,
+          }}
+        >
+          {imageUrl && (
+            <Box
+              component="img"
+              src={imageUrl}
+              alt={name}
+              sx={{
+                width: 120,
+                height: 120,
+                objectFit: "cover",
+                borderRadius: 1,
+                mr: 2,
+              }}
+            />
+          )}
+
+          <CardContent sx={{ flexGrow: 1 }}>
+            <Typography variant="h6">{name}</Typography>
+            <Typography color="text.secondary">₹{price}</Typography>
+          </CardContent>
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => handleCheckout(id)}
           >
-            {item.imageUrl && (
-              <img
-                src={item.imageUrl}
-                alt={item.name}
-                style={{ width: "150px", height: "150px", objectFit: "cover", marginRight: "1rem" }}
-              />
-            )}
-
-            <CardContent style={{ flexGrow: 1 }}>
-              <Typography variant="h6">{item.name}</Typography>
-              <Typography color="textSecondary">Price: ₹{item.price}</Typography>
-            </CardContent>
-
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => handleCheckout(item.id)}
-            >
-              Checkout
-            </Button>
-          </Card>
-        ))
-      )}
-    </div>
+            Checkout
+          </Button>
+        </Card>
+      ))}
+    </Box>
   );
 };
 
