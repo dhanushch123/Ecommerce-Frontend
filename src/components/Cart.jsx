@@ -1,220 +1,84 @@
-
-import React, { useContext, useState, useEffect } from "react";
-import AppContext from "../Context/Context";
-import API from "../axios";
-import CheckoutPopup from "./CheckoutPopup";
-import { Button } from 'react-bootstrap';
+import React, { useEffect, useState } from "react";
+import API from "../API";
+import { Button, Card, CardContent, Typography } from "@mui/material";
 
 const Cart = () => {
-  const { cart, removeFromCart , clearCart } = useContext(AppContext);
   const [cartItems, setCartItems] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [cartImage, setCartImage] = useState([]);
-  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    const fetchImagesAndUpdateCart = async () => {
-      console.log("Cart", cart);
-      try {
-        const response = await API.get("api/products");
-        const backendProductIds = response.data.map((product) => product.id);
+    fetchCartItems();
+  }, []);
 
-        const updatedCartItems = cart.filter((item) => backendProductIds.includes(item.id));
-        const cartItemsWithImages = await Promise.all(
-          updatedCartItems.map(async (item) => {
-            try {
-              const response = API.get(`api/product/${item.id}/image`,
-                { responseType: "blob" }
-              );
-              const imageFile = await converUrlToFile(response.data, response.data.imageName);
-              setCartImage(imageFile)
-              const imageUrl = URL.createObjectURL(response.data);
-              return { ...item, imageUrl };
-            } catch (error) {
-              console.error("Error fetching image:", error);
-              return { ...item, imageUrl: "placeholder-image-url" };
-            }
-          })
-        );
-        console.log("cart",cart)
-        setCartItems(cartItemsWithImages);
-      } catch (error) {
-        console.error("Error fetching product data:", error);
-      }
-    };
-
-    if (cart.length) {
-      fetchImagesAndUpdateCart();
-    }
-  }, [cart]);
-
-  useEffect(() => {
-    const total = cartItems.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0
-    );
-    setTotalPrice(total);
-  }, [cartItems]);
-
-  const converUrlToFile = async (blobData, fileName) => {
-    const file = new File([blobData], fileName, { type: blobData.type });
-    return file;
-  }
-
-  const handleIncreaseQuantity = (itemId) => {
-    const newCartItems = cartItems.map((item) => {
-      if (item.id === itemId) {
-        if (item.quantity < item.stockQuantity) {
-          return { ...item, quantity: item.quantity + 1 };
-        } else {
-          alert("Cannot add more than available stock");
-        }
-      }
-      return item;
-    });
-    setCartItems(newCartItems);
-  };
-  
-
-  const handleDecreaseQuantity = (itemId) => {
-    const newCartItems = cartItems.map((item) =>
-      item.id === itemId
-        ? { ...item, quantity: Math.max(item.quantity - 1, 1) }
-        : item
-    );
-    setCartItems(newCartItems);
-  };
-
-  const handleRemoveFromCart = (itemId) => {
-    removeFromCart(itemId);
-    const newCartItems = cartItems.filter((item) => item.id !== itemId);
-    setCartItems(newCartItems);
-  };
-
-  const handleCheckout = async () => {
+  const fetchCartItems = async () => {
     try {
-      for (const item of cartItems) {
-        const { imageUrl, imageName, imageData, imageType, quantity, ...rest } = item;
-        const updatedStockQuantity = item.stockQuantity - item.quantity;
-  
-        const updatedProductData = { ...rest, stockQuantity: updatedStockQuantity };
-        console.log("updated product data", updatedProductData)
-  
-        const cartProduct = new FormData();
-        cartProduct.append("imageFile", cartImage);
-        cartProduct.append(
-          "product",
-          new Blob([JSON.stringify(updatedProductData)], { type: "application/json" })
-        );
-  
-        await API
-          .put(`api/product/${item.id}`, cartProduct, {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          })
-          .then((response) => {
-            console.log("Product updated successfully:", (cartProduct));
-          })
-          .catch((error) => {
-            console.error("Error updating product:", error);
+      const cartResponse = await API.get("api/cart");
+      const itemsWithImages = await Promise.all(
+        cartResponse.data.map(async (item) => {
+          const imageResponse = await API.get(`api/product/${item.id}/image`, {
+            responseType: "blob"
           });
-      }
-      clearCart();
-      setCartItems([]);
-      setShowModal(false);
+          const imageUrl = URL.createObjectURL(imageResponse.data);
+          return { ...item, imageUrl };
+        })
+      );
+      setCartItems(itemsWithImages);
     } catch (error) {
-      console.log("error during checkout", error);
+      console.error("Failed to fetch cart items:", error);
+    }
+  };
+
+  const handleCheckout = async (productId) => {
+    try {
+      const response = await API.post(`api/product/checkout/${productId}`);
+      alert("Checkout successful!");
+    } catch (error) {
+      console.error("Checkout failed:", error);
     }
   };
 
   return (
-    <div className="cart-container">
-      <div className="shopping-cart">
-        <div className="title">Shopping Bag</div>
-        {cartItems.length === 0 ? (
-          <div className="empty" style={{ textAlign: "left", padding: "2rem" }}>
-            <h4>Your cart is empty</h4>
-          </div>
-        ) : (
-          <>
-            {cartItems.map((item) => (
-              <li key={item.id} className="cart-item">
-                <div
-                  className="item"
-                  style={{ display: "flex", alignContent: "center" }}
-                  key={item.id}
-                >
-                 
-                  <div>
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="cart-item-image"
-                    />
-                  </div>
-                  <div className="description">
-                    <span>{item.brand}</span>
-                    <span>{item.name}</span>
-                  </div>
+    <div style={{ padding: "2rem" }}>
+      <Typography variant="h4" gutterBottom>
+        Shopping Cart
+      </Typography>
 
-                  <div className="quantity">
-                    <button
-                      className="plus-btn"
-                      type="button"
-                      name="button"
-                      onClick={() => handleIncreaseQuantity(item.id)}
-                    >
-                      <i className="bi bi-plus-square-fill"></i>
-                    </button>
-                    <input
-                      type="button"
-                      name="name"
-                      value={item.quantity}
-                      readOnly
-                    />
-                    <button
-                      className="minus-btn"
-                      type="button"
-                      name="button"
-                      onClick={() => handleDecreaseQuantity(item.id)}
-                    >
-                      <i className="bi bi-dash-square-fill"></i>
-                    </button>
-                  </div>
+      {cartItems.length === 0 ? (
+        <Typography>No items in cart.</Typography>
+      ) : (
+        cartItems.map((item) => (
+          <Card
+            key={item.id}
+            style={{
+              marginBottom: "1rem",
+              display: "flex",
+              alignItems: "center",
+              padding: "1rem"
+            }}
+          >
+            {item.imageUrl && (
+              <img
+                src={item.imageUrl}
+                alt={item.name}
+                style={{ width: "150px", height: "150px", objectFit: "cover", marginRight: "1rem" }}
+              />
+            )}
 
-                  <div className="total-price " style={{ textAlign: "center" }}>
-                    ${item.price * item.quantity}
-                  </div>
-                  <button
-                    className="remove-btn"
-                    onClick={() => handleRemoveFromCart(item.id)}
-                  >
-                    <i className="bi bi-trash3-fill"></i>
-                  </button>
-                </div>
-              </li>
-            ))}
-            <div className="total">Total: ${totalPrice}</div>
+            <CardContent style={{ flexGrow: 1 }}>
+              <Typography variant="h6">{item.name}</Typography>
+              <Typography color="textSecondary">Price: ₹{item.price}</Typography>
+            </CardContent>
+
             <Button
-              className="btn btn-primary"
-              style={{ width: "100%" }}
-              onClick={() => setShowModal(true)}
+              variant="contained"
+              color="primary"
+              onClick={() => handleCheckout(item.id)}
             >
               Checkout
             </Button>
-          </>
-        )}
-      </div>
-      <CheckoutPopup
-        show={showModal}
-        handleClose={() => setShowModal(false)}
-        cartItems={cartItems}
-        totalPrice={totalPrice}
-        handleCheckout={handleCheckout}
-      />
+          </Card>
+        ))
+      )}
     </div>
-
   );
 };
 
